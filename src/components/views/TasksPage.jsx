@@ -1,43 +1,48 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+
+import { getTasks, addTask, resolveTask } from "../../services/tasksService";
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState({ label: "", urgent: false });
 
-  const addTask = () => {
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const fetchTasks = async () => {
+    const loadedTasks = await getTasks();
+    setTasks(loadedTasks);
+  };
+
+  const handleAddTask = async () => {
     if (newTask.label.trim()) {
-      setTasks([{ ...newTask }, ...tasks]);
+      await addTask(newTask.label, newTask.urgent);
       setNewTask({ label: "", urgent: false });
+      fetchTasks();
     }
   };
 
-  const toggleUrgency = (i) => {
-    const updated = [...tasks];
-    updated[i].urgent = !updated[i].urgent;
-    setTasks(updated);
-  };
-
-  const markAsResolved = (i) => {
-    const updated = tasks.filter((_, idx) => idx !== i);
-    setTasks(updated);
+  const handleResolveTask = async (id) => {
+    await resolveTask(id);
+    fetchTasks();
   };
 
   return (
     <Card>
       <CardHeader className="flex justify-between items-center">
-        <CardTitle>✅ Gestion des Tâches HSE</CardTitle>
-        <Button onClick={addTask}>+ Ajouter Tâche</Button>
+        <CardTitle>✅ Tâches HSE connectées Cloud</CardTitle>
+        <Button onClick={handleAddTask}>+ Ajouter Tâche</Button>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Création tâche */}
         <Input
           placeholder="Nouvelle tâche..."
           value={newTask.label}
           onChange={(e) => setNewTask({ ...newTask, label: e.target.value })}
-          onKeyDown={(e) => e.key === "Enter" && addTask()}
+          onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
         />
         <div className="flex gap-4 items-center">
           <input
@@ -48,19 +53,23 @@ export default function TasksPage() {
           <span>Urgente</span>
         </div>
 
-        {/* Liste tâches */}
+        {/* Liste des tâches */}
         <ul className="space-y-2 mt-4">
-          {tasks.map((task, i) => (
-            <li key={i}
-              className={`flex justify-between items-center p-2 border rounded cursor-pointer ${
-                task.urgent ? "bg-red-100" : "bg-green-100"
-              }`}
+          {tasks.map((task) => (
+            <li key={task.id}
+                className={`flex justify-between items-center p-2 border rounded cursor-pointer ${
+                  task.urgent ? "bg-red-100" : "bg-green-100"
+                }`}
             >
-              <div onClick={() => toggleUrgency(i)}>
+              <div>
                 {task.label}
                 {task.urgent && <span className="ml-2 text-red-600 font-bold">(Urgent)</span>}
               </div>
-              <Button size="sm" variant="destructive" onClick={() => markAsResolved(i)}>Résolu</Button>
+              {!task.resolved && (
+                <Button size="sm" variant="destructive" onClick={() => handleResolveTask(task.id)}>
+                  Résolu
+                </Button>
+              )}
             </li>
           ))}
         </ul>

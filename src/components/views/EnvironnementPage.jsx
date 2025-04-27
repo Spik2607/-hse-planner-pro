@@ -1,87 +1,99 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 
+import { getChecklists, addChecklist, validateChecklist } from "../../services/checklistsService";
+
 export default function EnvironnementPage() {
-  // Structure commune pour checklist
-  const createChecklist = (questions) => questions.map(q => ({ question: q, answer: null }));
+  const [checklists, setChecklists] = useState([]);
+  const [newChecklist, setNewChecklist] = useState({ title: "", items: [] });
+  const [newItem, setNewItem] = useState("");
 
-  // États pour chaque checklist
-  const [poussiereChecklist, setPoussiereChecklist] = useState(
-    createChecklist([
-      "Présence visible de poussières sur site",
-      "Dispositif anti-poussières fonctionnel",
-      "Zones de stockage couvertes"
-    ])
-  );
+  useEffect(() => {
+    fetchChecklists();
+  }, []);
 
-  const [eauxChecklist, setEauxChecklist] = useState(
-    createChecklist([
-      "Présence d'écoulements anormaux",
-      "Système de traitement des eaux opérationnel",
-      "Pas de pollution visible autour des bassins"
-    ])
-  );
-
-  const [plantesChecklist, setPlantesChecklist] = useState(
-    createChecklist([
-      "Présence de plantes invasives détectée",
-      "Zones traitées correctement",
-      "Barrières écologiques respectées"
-    ])
-  );
-
-  const [especesChecklist, setEspecesChecklist] = useState(
-    createChecklist([
-      "Observation d'espèces protégées",
-      "Mesures de protection mises en place",
-      "Zones sensibles balisées"
-    ])
-  );
-
-  // Fonction pour modifier la réponse
-  const setAnswer = (list, setList, index, value) => {
-    const updated = [...list];
-    updated[index].answer = value;
-    setList(updated);
+  const fetchChecklists = async () => {
+    const loaded = await getChecklists();
+    setChecklists(loaded);
   };
 
-  // Fonction de validation d'une checklist
-  const validateChecklist = (checklist) => {
-    const incomplete = checklist.some(q => q.answer === null);
-    if (incomplete) {
-      alert("Merci de répondre à toutes les questions avant de valider !");
-    } else {
-      alert("✅ Inspection validée !");
+  const handleAddChecklist = async () => {
+    if (newChecklist.title.trim() && newChecklist.items.length > 0) {
+      await addChecklist(newChecklist.title, newChecklist.items);
+      setNewChecklist({ title: "", items: [] });
+      setNewItem("");
+      fetchChecklists();
     }
   };
 
-  // Bloc commun pour afficher une checklist
-  const ChecklistBlock = ({ title, list, setList }) => (
-    <Card>
-      <CardHeader><CardTitle>{title}</CardTitle></CardHeader>
-      <CardContent className="space-y-4">
-        {list.map((item, idx) => (
-          <div key={idx} className="flex justify-between items-center border p-2 rounded">
-            <span>{item.question}</span>
-            <div className="flex gap-2">
-              <Button size="sm" variant={item.answer === true ? "solid" : "outline"} onClick={() => setAnswer(list, setList, idx, true)}>Oui</Button>
-              <Button size="sm" variant={item.answer === false ? "destructive" : "outline"} onClick={() => setAnswer(list, setList, idx, false)}>Non</Button>
-            </div>
-          </div>
-        ))}
-        <Button className="w-full mt-4" onClick={() => validateChecklist(list)}>Valider la checklist</Button>
-      </CardContent>
-    </Card>
-  );
+  const handleAddItem = () => {
+    if (newItem.trim()) {
+      setNewChecklist({
+        ...newChecklist,
+        items: [...newChecklist.items, { question: newItem, answer: null }],
+      });
+      setNewItem("");
+    }
+  };
+
+  const handleValidateChecklist = async (id) => {
+    await validateChecklist(id);
+    fetchChecklists();
+  };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <ChecklistBlock title="🌬️ Inspection Poussières" list={poussiereChecklist} setList={setPoussiereChecklist} />
-      <ChecklistBlock title="🌊 Inspection Eaux" list={eauxChecklist} setList={setEauxChecklist} />
-      <ChecklistBlock title="🌿 Inspection Plantes Invasives" list={plantesChecklist} setList={setPlantesChecklist} />
-      <ChecklistBlock title="🐦 Inspection Espèces Protégées" list={especesChecklist} setList={setEspecesChecklist} />
+    <div className="space-y-6">
+      {/* Formulaire création checklist */}
+      <Card>
+        <CardHeader>
+          <CardTitle>➕ Créer Nouvelle Checklist</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Input
+            placeholder="Titre checklist (ex: Inspection Poussières)"
+            value={newChecklist.title}
+            onChange={(e) => setNewChecklist({ ...newChecklist, title: e.target.value })}
+          />
+          <div className="flex gap-2">
+            <Input
+              placeholder="Nouvelle question"
+              value={newItem}
+              onChange={(e) => setNewItem(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
+            />
+            <Button onClick={handleAddItem}>Ajouter Question</Button>
+          </div>
+          <Button className="w-full" onClick={handleAddChecklist}>
+            ➕ Créer Checklist
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Affichage Checklists existantes */}
+      {checklists.map((check, idx) => (
+        <Card key={idx}>
+          <CardHeader>
+            <CardTitle>{check.title}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {check.items && check.items.length > 0 && check.items.map((item, idx2) => (
+              <div key={idx2} className="p-2 bg-gray-100 rounded">
+                {item.question}
+              </div>
+            ))}
+            {!check.validated && (
+              <Button className="w-full mt-2" onClick={() => handleValidateChecklist(check.id)}>
+                ✅ Valider Checklist
+              </Button>
+            )}
+            {check.validated && (
+              <div className="text-green-600 font-bold text-center mt-2">Checklist Validée</div>
+            )}
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

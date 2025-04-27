@@ -12,7 +12,7 @@ export function Sidebar({ activeTab, setActiveTab }) {
   ];
 
   return (
-    <aside className="w-60 bg-blue-700 text-white flex flex-col p-4 space-y-4">
+    <aside className="w-60 bg-blue-700 text-white flex flex-col p-4 space-y-4 min-h-screen">
       {menu.map((item, idx) => (
         <button
           key={idx}
