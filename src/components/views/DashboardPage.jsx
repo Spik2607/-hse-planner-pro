@@ -1,73 +1,58 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
-
+import CalendarAgenda from "./AgendaPage";
 import { getTasks } from "../../services/tasksService";
 import { getAnomalies } from "../../services/anomaliesService";
-import CalendarAgenda from "./AgendaPage";
 
 export default function DashboardPage() {
   const [tasks, setTasks] = useState([]);
   const [anomalies, setAnomalies] = useState([]);
 
   useEffect(() => {
-    fetchAllData();
+    const fetchData = async () => {
+      const loadedTasks = await getTasks();
+      const loadedAnomalies = await getAnomalies();
+      setTasks(loadedTasks);
+      setAnomalies(loadedAnomalies);
+    };
+    fetchData();
   }, []);
 
-  const fetchAllData = async () => {
-    const loadedTasks = await getTasks();
-    const loadedAnomalies = await getAnomalies();
-    setTasks(loadedTasks);
-    setAnomalies(loadedAnomalies);
-  };
-
-  const urgentTasks = tasks.filter(task => task.urgent && !task.resolved);
-  const criticalAnomalies = anomalies.filter(anom => anom.critical && !anom.resolved);
+  const urgentTasks = tasks.filter(t => t.urgent && !t.resolved);
+  const criticalAnomalies = anomalies.filter(a => a.critical && !a.resolved);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-      {/* Colonne gauche */}
       <div className="space-y-6">
-
-        {/* Agenda résumé */}
         <CalendarAgenda />
 
-        {/* Tâches urgentes */}
         <Card>
-          <CardHeader><CardTitle>✅ Tâches HSE Urgentes</CardTitle></CardHeader>
+          <CardHeader><CardTitle>✅ Tâches urgentes</CardTitle></CardHeader>
           <CardContent className="space-y-2">
             {urgentTasks.length === 0 ? (
-              <p className="text-gray-500 text-center">Aucune tâche urgente à traiter.</p>
-            ) : (
-              urgentTasks.map((task) => (
-                <div key={task.id} className="p-2 bg-red-100 rounded">{task.label}</div>
-              ))
-            )}
+              <p className="text-sm text-gray-500 text-center">Aucune tâche urgente.</p>
+            ) : urgentTasks.map((t) => (
+              <div key={t.id} className="p-2 bg-red-100 rounded">{t.label}</div>
+            ))}
           </CardContent>
         </Card>
-
       </div>
 
-      {/* Colonne droite */}
       <div className="space-y-6">
-
-        {/* Anomalies critiques */}
         <Card>
-          <CardHeader><CardTitle>🚨 Anomalies Critiques</CardTitle></CardHeader>
+          <CardHeader><CardTitle>🚨 Anomalies critiques</CardTitle></CardHeader>
           <CardContent className="space-y-2">
             {criticalAnomalies.length === 0 ? (
-              <p className="text-gray-500 text-center">Aucune anomalie critique en cours.</p>
-            ) : (
-              criticalAnomalies.map((anom) => (
-                <div key={anom.id} className="p-2 bg-red-200 rounded">{anom.description}</div>
-              ))
-            )}
+              <p className="text-sm text-gray-500 text-center">Aucune anomalie critique.</p>
+            ) : criticalAnomalies.map((a) => (
+              <div key={a.id} className="p-2 bg-red-200 rounded">{a.description}</div>
+            ))}
           </CardContent>
         </Card>
 
-        {/* Indicateurs fixes */}
         <Card>
-          <CardHeader><CardTitle>📊 Indicateurs Rapides</CardTitle></CardHeader>
+          <CardHeader><CardTitle>📊 Indicateurs fixes</CardTitle></CardHeader>
           <CardContent className="flex justify-around">
             <div className="text-center">
               <div className="text-3xl font-bold">12,4</div>
@@ -79,9 +64,7 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-
       </div>
-
     </div>
   );
 }

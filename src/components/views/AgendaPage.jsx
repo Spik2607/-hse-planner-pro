@@ -12,7 +12,12 @@ export default function AgendaPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [newEvent, setNewEvent] = useState({ title: "", description: "", zone: "", priority: "Normale" });
+  const [newEvent, setNewEvent] = useState({
+    title: "",
+    description: "",
+    zone: "",
+    priority: "Normale"
+  });
 
   useEffect(() => {
     fetchEvents();
@@ -25,7 +30,13 @@ export default function AgendaPage() {
 
   const handleAddEvent = async () => {
     if (newEvent.title.trim()) {
-      await addEvent(newEvent.title, newEvent.description, newEvent.zone, newEvent.priority, selectedDate);
+      await addEvent(
+        newEvent.title,
+        newEvent.description,
+        newEvent.zone,
+        newEvent.priority,
+        selectedDate
+      );
       setNewEvent({ title: "", description: "", zone: "", priority: "Normale" });
       setModalOpen(false);
       fetchEvents();
@@ -38,17 +49,16 @@ export default function AgendaPage() {
   };
 
   const handleCreateTaskFromEvent = async (event) => {
-    await addTask(event.title, false); // Crée une tâche non urgente
+    await addTask(event.title, false);
     alert(`✅ Tâche HSE créée : ${event.title}`);
   };
 
-  // ✅ CORRECTION ici
   const eventsOfDay = events.filter((event) => {
-    const eventDate = new Date(event.event_date);
+    const d = new Date(event.event_date);
     return (
-      eventDate.getFullYear() === selectedDate.getFullYear() &&
-      eventDate.getMonth() === selectedDate.getMonth() &&
-      eventDate.getDate() === selectedDate.getDate()
+      d.getFullYear() === selectedDate.getFullYear() &&
+      d.getMonth() === selectedDate.getMonth() &&
+      d.getDate() === selectedDate.getDate()
     );
   });
 
@@ -59,18 +69,22 @@ export default function AgendaPage() {
       </CardHeader>
       <CardContent className="flex flex-col items-center space-y-4">
         <Calendar
-          onChange={(date) => { setSelectedDate(date); setModalOpen(true); }}
+          onChange={(date) => {
+            setSelectedDate(date);
+            setModalOpen(true);
+          }}
           value={selectedDate}
           className="rounded-lg shadow p-2"
         />
 
         {modalOpen && (
           <div className="w-full mt-4 p-4 bg-gray-100 rounded shadow">
-            <h3 className="text-lg font-semibold mb-2">📌 Actions pour {selectedDate.toLocaleDateString()}</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              📌 Événements du {selectedDate.toLocaleDateString()}
+            </h3>
 
-            {/* Ajouter un événement */}
             <Input
-              placeholder="Titre événement"
+              placeholder="Titre"
               value={newEvent.title}
               onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
               className="mb-2"
@@ -82,7 +96,7 @@ export default function AgendaPage() {
               className="mb-2"
             />
             <Input
-              placeholder="Zone concernée"
+              placeholder="Zone"
               value={newEvent.zone}
               onChange={(e) => setNewEvent({ ...newEvent, zone: e.target.value })}
               className="mb-2"
@@ -99,10 +113,8 @@ export default function AgendaPage() {
 
             <Button onClick={handleAddEvent} className="w-full mb-4">➕ Ajouter l'événement</Button>
 
-            {/* Liste des événements existants */}
             {eventsOfDay.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <h4 className="text-md font-semibold">📋 Événements du jour :</h4>
+              <div className="space-y-2">
                 {eventsOfDay.map((event) => (
                   <div key={event.id} className="p-2 bg-blue-100 rounded flex flex-col gap-2">
                     <div className="flex justify-between items-center">
@@ -111,11 +123,19 @@ export default function AgendaPage() {
                         <div className="text-sm">{event.description}</div>
                         <div className="text-xs text-gray-600">{event.zone} • {event.priority}</div>
                       </div>
-                      <Button size="sm" variant="destructive" onClick={() => handleDeleteEvent(event.id)}>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDeleteEvent(event.id)}
+                      >
                         Supprimer
                       </Button>
                     </div>
-                    <Button size="sm" variant="outline" onClick={() => handleCreateTaskFromEvent(event)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleCreateTaskFromEvent(event)}
+                    >
                       ➕ Créer Tâche HSE
                     </Button>
                   </div>
@@ -123,7 +143,11 @@ export default function AgendaPage() {
               </div>
             )}
 
-            <Button onClick={() => setModalOpen(false)} variant="outline" className="w-full mt-6">
+            <Button
+              onClick={() => setModalOpen(false)}
+              variant="outline"
+              className="w-full mt-4"
+            >
               Fermer
             </Button>
           </div>

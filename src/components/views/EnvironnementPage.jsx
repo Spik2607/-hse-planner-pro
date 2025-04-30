@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -15,12 +15,12 @@ export default function EnvironnementPage() {
   }, []);
 
   const fetchChecklists = async () => {
-    const loaded = await getChecklists();
-    setChecklists(loaded);
+    const data = await getChecklists();
+    setChecklists(data);
   };
 
   const handleAddChecklist = async () => {
-    if (newChecklist.title.trim() && newChecklist.items.length > 0) {
+    if (newChecklist.title && newChecklist.items.length > 0) {
       await addChecklist(newChecklist.title, newChecklist.items);
       setNewChecklist({ title: "", items: [] });
       setNewItem("");
@@ -38,21 +38,20 @@ export default function EnvironnementPage() {
     }
   };
 
-  const handleValidateChecklist = async (id) => {
+  const handleValidate = async (id) => {
     await validateChecklist(id);
     fetchChecklists();
   };
 
   return (
     <div className="space-y-6">
-      {/* Formulaire création checklist */}
       <Card>
         <CardHeader>
-          <CardTitle>➕ Créer Nouvelle Checklist</CardTitle>
+          <CardTitle>Créer une checklist environnement</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2">
           <Input
-            placeholder="Titre checklist (ex: Inspection Poussières)"
+            placeholder="Titre de la checklist"
             value={newChecklist.title}
             onChange={(e) => setNewChecklist({ ...newChecklist, title: e.target.value })}
           />
@@ -63,33 +62,29 @@ export default function EnvironnementPage() {
               onChange={(e) => setNewItem(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
             />
-            <Button onClick={handleAddItem}>Ajouter Question</Button>
+            <Button onClick={handleAddItem}>Ajouter</Button>
           </div>
-          <Button className="w-full" onClick={handleAddChecklist}>
-            ➕ Créer Checklist
+          <Button onClick={handleAddChecklist} className="w-full mt-2">
+            Enregistrer la checklist
           </Button>
         </CardContent>
       </Card>
 
-      {/* Affichage Checklists existantes */}
-      {checklists.map((check, idx) => (
-        <Card key={idx}>
-          <CardHeader>
-            <CardTitle>{check.title}</CardTitle>
-          </CardHeader>
+      {/* Listage des checklists */}
+      {checklists.map((check, i) => (
+        <Card key={i}>
+          <CardHeader><CardTitle>{check.title}</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            {check.items && check.items.length > 0 && check.items.map((item, idx2) => (
-              <div key={idx2} className="p-2 bg-gray-100 rounded">
-                {item.question}
-              </div>
+            {check.items?.map((item, idx) => (
+              <div key={idx} className="p-2 bg-gray-100 rounded">{item.question}</div>
             ))}
             {!check.validated && (
-              <Button className="w-full mt-2" onClick={() => handleValidateChecklist(check.id)}>
-                ✅ Valider Checklist
+              <Button onClick={() => handleValidate(check.id)} className="w-full">
+                ✅ Valider
               </Button>
             )}
             {check.validated && (
-              <div className="text-green-600 font-bold text-center mt-2">Checklist Validée</div>
+              <div className="text-green-600 text-center font-semibold">Checklist validée</div>
             )}
           </CardContent>
         </Card>

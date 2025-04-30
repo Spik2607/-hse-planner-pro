@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -7,38 +7,40 @@ import { getAnomalies, addAnomaly, resolveAnomaly } from "../../services/anomali
 
 export default function AnomaliesPage() {
   const [anomalies, setAnomalies] = useState([]);
-  const [newAnomaly, setNewAnomaly] = useState({ description: "", critical: false, photo: null });
+  const [newAnomaly, setNewAnomaly] = useState({
+    description: "",
+    critical: false,
+    photo: null,
+  });
 
   useEffect(() => {
     fetchAnomalies();
   }, []);
 
   const fetchAnomalies = async () => {
-    const loadedAnomalies = await getAnomalies();
-    setAnomalies(loadedAnomalies);
+    const loaded = await getAnomalies();
+    setAnomalies(loaded);
   };
 
   const handleAddAnomaly = async () => {
-    if (newAnomaly.description.trim()) {
-      let photoBase64 = null;
-      if (newAnomaly.photo) {
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-          photoBase64 = reader.result;
-          await addAnomaly(newAnomaly.description, newAnomaly.critical, photoBase64);
-          setNewAnomaly({ description: "", critical: false, photo: null });
-          fetchAnomalies();
-        };
-        reader.readAsDataURL(newAnomaly.photo);
-      } else {
-        await addAnomaly(newAnomaly.description, newAnomaly.critical, null);
+    if (!newAnomaly.description.trim()) return;
+
+    if (newAnomaly.photo) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        await addAnomaly(newAnomaly.description, newAnomaly.critical, reader.result);
         setNewAnomaly({ description: "", critical: false, photo: null });
         fetchAnomalies();
-      }
+      };
+      reader.readAsDataURL(newAnomaly.photo);
+    } else {
+      await addAnomaly(newAnomaly.description, newAnomaly.critical, null);
+      setNewAnomaly({ description: "", critical: false, photo: null });
+      fetchAnomalies();
     }
   };
 
-  const handleResolveAnomaly = async (id) => {
+  const handleResolve = async (id) => {
     await resolveAnomaly(id);
     fetchAnomalies();
   };
@@ -46,45 +48,50 @@ export default function AnomaliesPage() {
   return (
     <Card>
       <CardHeader className="flex justify-between items-center">
-        <CardTitle>🚨 Registre Anomalies connectées Cloud</CardTitle>
-        <Button onClick={handleAddAnomaly}>+ Déclarer Anomalie</Button>
+        <CardTitle>🚨 Anomalies Environnement</CardTitle>
+        <Button onClick={handleAddAnomaly}>+ Ajouter</Button>
       </CardHeader>
       <CardContent className="space-y-4">
         <Input
-          placeholder="Décrire anomalie..."
+          placeholder="Description"
           value={newAnomaly.description}
-          onChange={(e) => setNewAnomaly({ ...newAnomaly, description: e.target.value })}
-          onKeyDown={(e) => e.key === "Enter" && handleAddAnomaly()}
+          onChange={(e) =>
+            setNewAnomaly({ ...newAnomaly, description: e.target.value })
+          }
         />
-        <div className="flex gap-4 items-center">
+        <div className="flex items-center gap-2">
           <input
             type="checkbox"
             checked={newAnomaly.critical}
-            onChange={(e) => setNewAnomaly({ ...newAnomaly, critical: e.target.checked })}
+            onChange={(e) =>
+              setNewAnomaly({ ...newAnomaly, critical: e.target.checked })
+            }
           />
           <span>Critique</span>
         </div>
         <Input
           type="file"
           accept="image/*"
-          onChange={(e) => setNewAnomaly({ ...newAnomaly, photo: e.target.files[0] })}
+          onChange={(e) =>
+            setNewAnomaly({ ...newAnomaly, photo: e.target.files[0] })
+          }
         />
 
-        {/* Liste des anomalies */}
-        <ul className="space-y-2 mt-4">
+        <ul className="space-y-2 pt-4">
           {anomalies.map((anom) => (
-            <li key={anom.id}
-                className={`flex flex-col gap-2 p-2 border rounded cursor-pointer ${
-                  anom.critical ? "bg-red-200" : "bg-yellow-100"
-                }`}
+            <li
+              key={anom.id}
+              className={`p-2 border rounded ${
+                anom.critical ? "bg-red-100" : "bg-yellow-100"
+              }`}
             >
               <div className="flex justify-between items-center">
                 <div>
-                  {anom.description}
-                  {anom.critical && <span className="ml-2 text-red-600 font-bold">(Critique)</span>}
+                  <strong>{anom.description}</strong>
+                  {anom.critical && <span className="ml-2 text-red-600">(Critique)</span>}
                 </div>
                 {!anom.resolved && (
-                  <Button size="sm" variant="destructive" onClick={() => handleResolveAnomaly(anom.id)}>
+                  <Button size="sm" variant="destructive" onClick={() => handleResolve(anom.id)}>
                     Corrigée
                   </Button>
                 )}
@@ -93,8 +100,11 @@ export default function AnomaliesPage() {
                 <img
                   src={anom.photo_base64}
                   alt="Preuve"
-                  className="w-32 h-32 object-cover rounded shadow"
+                  className="mt-2 w-32 h-32 object-cover rounded"
                 />
+              )}
+              {anom.resolved && (
+                <div className="text-xs text-gray-500 mt-1">✅ Corrigée</div>
               )}
             </li>
           ))}
